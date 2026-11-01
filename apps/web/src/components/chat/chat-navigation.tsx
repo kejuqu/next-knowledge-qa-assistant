@@ -422,10 +422,11 @@ export function ChatNavigation() {
         {!collapsed && expanded && <ConversationList onSelect={selectConversation} />}
       </div>
       {NAV.filter((item) => item.href === "/settings" ? canManageSettings : item.href === "/team" ? canManageTeam || canSetRoles : true).map((item) => {
+        const isActive = pathname === item.href || (item.href === "/team" && pathname.startsWith("/team/"));
         const linkClassName = `flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-sm transition-colors duration-200 ${
           collapsed ? "justify-center px-2" : ""
         } ${
-          pathname === item.href
+          isActive
             ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
             : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         }`;
@@ -438,7 +439,7 @@ export function ChatNavigation() {
               <item.icon
                 className={cn(
                   "size-4",
-                  pathname === item.href && "text-sidebar-primary"
+                  isActive && "text-sidebar-primary"
                 )}
               />
               {!collapsed && item.label}

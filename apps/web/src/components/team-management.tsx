@@ -12,8 +12,6 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Skeleton } from "@kqa/ui/components/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyDescription } from "@kqa/ui/components/empty";
 import { UserRoundCheck } from "lucide-react";
-import { TeamQuickNavigation } from "./team-quick-navigation";
-import { TeamImportManagement } from "./team-import-management";
 import { UserAvatar } from "./user-avatar";
 import { PERMISSIONS, effectivePermissions, type Permission, type TenantRole, type MembershipStatus } from "@kqa/auth/permissions";
 import { usePermission, useTenantAccess } from "./tenant-role";
@@ -69,7 +67,7 @@ export function TeamManagement() {
   }
 
   if (!canManage && !canSetRoles) return <p className="p-6 text-muted-foreground">你没有团队管理权限，请联系管理员。</p>;
-  if (isPending) return <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6" role="status" aria-label="正在加载团队"><Skeleton className="h-8 w-40" /><Skeleton className="h-40 w-full" /></div>;
+  if (isPending) return <div className="flex flex-col gap-4" role="status" aria-label="正在加载团队"><Skeleton className="h-8 w-40" /><Skeleton className="h-40 w-full" /></div>;
   const pending = data?.members.filter((member) => member.status === "pending") ?? [];
   const active = data?.members.filter((member) => member.status === "active") ?? [];
   const rejected = data?.members.filter((member) => member.status === "rejected") ?? [];
@@ -77,15 +75,27 @@ export function TeamManagement() {
   const available = effectivePermissions(actor);
 
   return (
-    <div className="team-page p-4 md:p-6">
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,48rem)_minmax(11rem,1fr)] lg:gap-8">
-      <TeamQuickNavigation canManage={canManage} ready={!isPending && !!data} />
-      <div className="flex min-w-0 flex-col gap-6 lg:col-start-2 lg:row-start-1">
+    <>
+      <div className="flex min-w-0 flex-col gap-6">
         <div><h1 className="text-xl font-semibold">团队管理</h1><p className="mt-1 text-sm text-muted-foreground">{data?.tenantName} · 审批加入申请，管理成员角色与操作权限</p></div>
         {(loadError || (error && !editing)) && <p role="alert" className="text-sm text-destructive">{loadError?.message ?? error}</p>}
-        <Card id="join-requests" className="team-section scroll-mt-52 lg:scroll-mt-6" tabIndex={-1}>
-          <CardHeader><CardTitle>加入申请 · {pending.length}</CardTitle><CardDescription>通过审批后，成员才可访问团队知识库。</CardDescription></CardHeader>
-          <CardContent className="flex flex-col gap-4">
+        <Card id="team-management" className="team-section scroll-mt-52 lg:scroll-mt-6" tabIndex={-1}>
+          <section id="team-members" className="team-section flex scroll-mt-52 flex-col lg:scroll-mt-6" tabIndex={-1}>
+          <CardHeader><CardTitle>团队成员{active.length > 0 && ` (${active.length})`}</CardTitle><CardDescription>管理员默认拥有全部权限，也可通过勾选自定义权限。</CardDescription></CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            {active.map((member) => <div key={member.id} className="flex flex-wrap items-center justify-between gap-3">
+              <UserAvatar name={member.name} src={member.avatarUrl} className="size-10" />
+              <div className="min-w-0 flex-1"><p className="font-medium">{member.name}{member.userId === data?.userId && "（你）"} <span className="text-xs text-muted-foreground">{member.role === "admin" ? "管理员" : "成员"}</span></p>
+                <p className="break-all text-sm text-muted-foreground">{member.email}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{member.permissions === null ? member.role === "admin" ? "全部管理权限" : "基础访问：问答、查看及下载文档" : effectivePermissions(member).map((permission) => PERMISSIONS.find((item) => item.key === permission)?.label).join("、") || "基础访问：问答、查看及下载文档"}</p>
+              </div>
+              {canSetRoles && <Button variant="outline" disabled={busy} onClick={() => edit(member)} aria-label={`设置 ${member.name} 的权限`}>设置权限</Button>}
+            </div>)}
+          </CardContent>
+          </section>
+        <section id="join-requests" aria-labelledby="join-requests-title" className="team-section mx-6 flex scroll-mt-52 flex-col gap-4 border-t py-6 lg:scroll-mt-6" tabIndex={-1}>
+          <div><h2 id="join-requests-title" className="font-semibold">加入申请{pending.length > 0 && ` (${pending.length})`}</h2><p className="mt-1 text-sm text-muted-foreground">通过审批后，成员才可访问团队知识库。</p></div>
+          <div className="flex flex-col gap-4">
             {!pending.length && <Empty className="empty-state relative overflow-hidden border border-theme-border/70 bg-gradient-to-b from-primary/[0.06] via-muted/40 to-transparent py-10 md:py-12">
               <div aria-hidden className="pointer-events-none absolute inset-0">
                 <div className="empty-glow absolute left-1/2 top-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-3xl" />
@@ -102,27 +112,13 @@ export function TeamManagement() {
             </Empty>}
             {pending.map((member) => <div key={member.id} className="flex flex-wrap items-center justify-between gap-3">
               <UserAvatar name={member.name} src={member.avatarUrl} className="size-10" />
-              <div className="min-w-0"><p className="font-medium">{member.name}</p><p className="break-all text-sm text-muted-foreground">{member.email} · {new Date(member.createdAt).toLocaleString("zh-CN")}</p></div>
+              <div className="min-w-0 flex-1"><p className="font-medium">{member.name}</p><p className="break-all text-sm text-muted-foreground">{member.email} · {new Date(member.createdAt).toLocaleString("zh-CN")}</p></div>
               {canManage && <div className="flex gap-2"><Button variant="outline" disabled={busy} onClick={() => { edit(member); }}>审核申请</Button></div>}
             </div>)}
-          </CardContent>
+          </div>
+        </section>
         </Card>
-        <Card id="team-members" className="team-section scroll-mt-52 lg:scroll-mt-6" tabIndex={-1}>
-          <CardHeader><CardTitle>团队成员 · {active.length}</CardTitle><CardDescription>管理员默认拥有全部权限，也可通过勾选自定义权限。</CardDescription></CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            {active.map((member) => <div key={member.id} className="flex flex-wrap items-center justify-between gap-3">
-              <UserAvatar name={member.name} src={member.avatarUrl} className="size-10" />
-              <div className="min-w-0 flex-1"><p className="font-medium">{member.name}{member.userId === data?.userId && "（你）"} <span className="text-xs text-muted-foreground">{member.role === "admin" ? "管理员" : "成员"}</span></p>
-                <p className="break-all text-sm text-muted-foreground">{member.email}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{member.permissions === null ? member.role === "admin" ? "全部管理权限" : "基础访问：问答、查看及下载文档" : effectivePermissions(member).map((permission) => PERMISSIONS.find((item) => item.key === permission)?.label).join("、") || "基础访问：问答、查看及下载文档"}</p>
-              </div>
-              {canSetRoles && <Button variant="outline" disabled={busy} onClick={() => edit(member)} aria-label={`设置 ${member.name} 的权限`}>设置权限</Button>}
-            </div>)}
-          </CardContent>
-        </Card>
-        {canManage && <TeamImportManagement />}
         {rejected.length > 0 && <p className="text-xs text-muted-foreground">已拒绝 {rejected.length} 个加入申请</p>}
-      </div>
       </div>
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open && !busy) setEditing(null); }}>
         <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg" showCloseButton={!busy}>
@@ -174,6 +170,6 @@ export function TeamManagement() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

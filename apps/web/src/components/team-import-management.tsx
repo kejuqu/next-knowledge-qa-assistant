@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@kqa/ui/components/button";
 import { Input } from "@kqa/ui/components/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@kqa/ui/components/card";
-import { FieldGroup, Field, FieldLabel, FieldDescription } from "@kqa/ui/components/field";
+import { FieldGroup, Field, FieldLabel } from "@kqa/ui/components/field";
 
 type ApiKey = { id: string; name: string; prefix: string; createdAt: string; expiresAt: string; lastUsedAt: string | null; revokedAt: string | null };
 type ImportResult = { added: number; skipped: number; failed: number; results: { row: number; email: string; status: string; message: string }[] };
@@ -87,10 +87,6 @@ export function TeamImportManagement() {
     <Card id="employee-import" className="team-section scroll-mt-52 lg:scroll-mt-6" tabIndex={-1}>
       <CardHeader><CardTitle>批量导入员工</CardTitle><CardDescription>上传 Excel，将员工直接添加至当前团队，无需再次审批。</CardDescription></CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm"><FileSpreadsheet className="size-4 text-primary" aria-hidden /><span>使用标准模板整理员工名单</span></div>
-          <Button asChild variant="outline" size="sm"><a href="/api/team/import/template"><Download data-icon="inline-start" />下载模板</a></Button>
-        </div>
         <form onSubmit={(event) => { event.preventDefault(); void importFile(); }} className="flex flex-col gap-4" aria-busy={importing}>
           <FieldGroup><Field data-invalid={!!uploadError}>
             <FieldLabel className="sr-only" htmlFor="employee-excel">员工 Excel 文件</FieldLabel>
@@ -112,15 +108,14 @@ export function TeamImportManagement() {
                 <span className="flex flex-col gap-1.5"><span className="text-sm font-medium">{dragging ? "松开以添加员工名单" : <>将 Excel 文件拖到这里，或<span className="text-primary">点击上传</span></>}</span><span className="text-xs text-muted-foreground">支持 .xlsx · 文件不超过 1 MB · 每批最多 100 人</span></span>
               </button>}
             </div>
-            <FieldDescription id="employee-upload-help">模板需包含姓名、邮箱、初始密码三列，请以纯文本填写。</FieldDescription>
             {uploadError && <p role="alert" className="flex items-start gap-2 text-sm text-destructive"><AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />{uploadError}</p>}
           </Field></FieldGroup>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">{file ? "确认名单无误后，上传并导入至当前团队。" : "选择文件后即可开始导入。"}</p>
+            <Button asChild variant="outline" className="w-full sm:w-auto"><a href="/api/team/import/template"><Download data-icon="inline-start" />下载模板</a></Button>
             <Button type="submit" className="w-full sm:w-auto" disabled={importing || !file}>{importing ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Upload data-icon="inline-start" />}{importing ? "正在导入…" : "上传并导入"}</Button>
           </div>
         </form>
-        <details className="text-xs text-muted-foreground"><summary className="w-fit cursor-pointer py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">查看导入规则</summary><p className="mt-2 leading-relaxed">姓名、邮箱为必填。新账号须填写至少 8 位、最多 72 字节的初始密码；已有账号保持原密码，重复成员自动跳过，其他团队账号不支持导入。导入后员工将直接加入当前团队，无需再次审批。</p></details>
+        <details className="text-xs text-muted-foreground"><summary className="w-fit cursor-pointer py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">查看导入规则</summary><p id="employee-upload-help" className="mt-2 leading-relaxed">请使用模板中的姓名、邮箱、初始密码三列，以纯文本填写。姓名、邮箱为必填；新账号须填写至少 8 位、最多 72 字节的初始密码。已有账号保持原密码，重复成员自动跳过，其他团队账号不支持导入。</p></details>
         {result && <div role="status" className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-4 text-sm">
           <div className="flex items-center gap-2"><CheckCircle2 className="size-4 shrink-0 text-primary" aria-hidden /><p className="font-medium">导入完成</p></div>
           <p className="text-muted-foreground">已添加 {result.added} 人 · 跳过 {result.skipped} 人 · 失败 {result.failed} 人</p>
