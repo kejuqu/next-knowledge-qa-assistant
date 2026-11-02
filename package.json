@@ -13,6 +13,7 @@
     "docker:down": "docker compose down"
   },
   "devDependencies": {
+    "dotenv-cli": "^11.1.0",
     "turbo": "^2.5.0"
   }
 }

@@ -21,8 +21,8 @@
 ```
 knowledge-qa-assistant/
 ├── apps/
-│   ├── web/                  # 主应用  app.lvh.me:3100（问答/知识库/模型设置）
-│   └── auth/                 # 认证中心 auth.lvh.me:3001（注册/登录/退出）
+│   ├── web/                  # 主应用  app.lvh.me:6101（问答/知识库/模型设置）
+│   └── auth/                 # 认证中心 auth.lvh.me:6100（注册/登录/退出）
 ├── packages/
 │   ├── ui/                   # @kqa/ui        shadcn 风格组件 + 主题 tokens
 │   ├── db/                   # @kqa/db        Drizzle schema + 连接客户端
@@ -42,9 +42,9 @@ knowledge-qa-assistant/
 ## 跨子域名认证原理
 
 ```
-auth.lvh.me:3001 ──登录成功──> Set-Cookie: kqa_session=<JWT>; Domain=.lvh.me; HttpOnly
+auth.lvh.me:6100 ──登录成功──> Set-Cookie: kqa_session=<JWT>; Domain=.lvh.me; HttpOnly
                                         │
-app.lvh.me:3100 ──proxy.ts 统一校验 JWT──> 服务端独立验证身份与资源权限
+app.lvh.me:6101 ──proxy.ts 统一校验 JWT──> 服务端独立验证身份与资源权限
 ```
 
 - cookie 写在**父域名** `.lvh.me` 上，所有子域名共享
@@ -77,8 +77,8 @@ pnpm dev
 
 访问：
 
-- 主应用：http://app.lvh.me:3100 （如果未登录自动跳转认证中心）
-- 认证中心：http://auth.lvh.me:3001
+- 主应用：http://app.lvh.me:6101 （如果未登录自动跳转认证中心）
+- 认证中心：http://auth.lvh.me:6100
 - MinIO 控制台：http://localhost:9001 （minioadmin / minioadmin）
 - Attu（Milvus GUI）：http://localhost:8000 → 看向量集合、逐行数据、手动试检索；`docker compose up -d` 自动拉起，详见 [docs/nextjs-monorepo-postgres-milvus-rag.md](docs/nextjs-monorepo-postgres-milvus-rag.md) 第 10 节
 

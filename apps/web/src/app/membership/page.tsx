@@ -6,7 +6,7 @@ import { Button } from "@kqa/ui/components/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@kqa/ui/components/card";
 import { Clock, RefreshCw } from "lucide-react";
 
-const AUTH_APP_URL = process.env.NEXT_PUBLIC_AUTH_APP_URL ?? "http://auth.lvh.me:3001";
+const AUTH_APP_URL = process.env.NEXT_PUBLIC_AUTH_APP_URL ?? "http://auth.lvh.me:6100";
 
 export default function MembershipPage() {
   const { data, error, refetch, isFetching } = useQuery<{ status: string; tenantName: string }>({

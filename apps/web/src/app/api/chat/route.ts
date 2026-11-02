@@ -45,20 +45,28 @@ export async function POST(request: Request) {
   const requestedDocumentIds = Array.isArray(documentIds)
     ? documentIds.filter((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id)).slice(0, 50)
     : [];
-  const permittedDocumentIds = requestedDocumentIds.length
-    ? (await db.select({ id: documents.id }).from(documents).where(and(
+  // 检索范围始终收敛到 PG 里「未删除且 ready」的文档：
+  // Milvus 只按 tenantId 过滤，若其中残留已删文档的向量（如重置数据库后未清理），
+  // 会把失效分块召回并展示成重复/幽灵引用，所以这里用活文档 ID 列表把脏数据挡在检索之外。
+  const liveDocuments = requestedDocumentIds.length
+    ? await db.select({ id: documents.id }).from(documents).where(and(
         eq(documents.tenantId, user.tenantId),
         isNull(documents.deletedAt),
         eq(documents.status, "ready"),
         inArray(documents.id, requestedDocumentIds)
-      ))).map((document) => document.id)
-    : [];
+      ))
+    : await db.select({ id: documents.id }).from(documents).where(and(
+        eq(documents.tenantId, user.tenantId),
+        isNull(documents.deletedAt),
+        eq(documents.status, "ready")
+      ));
+  const permittedDocumentIds = liveDocuments.map((document) => document.id);
   const config = await getModelConfigForTenant(user.tenantId);
   const { stream, citations } = await streamRagAnswer(
     message,
     user.tenantId,
     config,
-    requestedDocumentIds.length ? permittedDocumentIds : null
+    permittedDocumentIds
   );
 
   const metaLine = JSON.stringify({

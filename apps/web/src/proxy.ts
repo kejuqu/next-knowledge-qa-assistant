@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/api" || request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const authUrl = process.env.AUTH_APP_URL ?? "http://auth.lvh.me:3001";
+  const authUrl = process.env.AUTH_APP_URL ?? "http://auth.lvh.me:6100";
   return NextResponse.redirect(new URL("/signin", authUrl));
 }
 

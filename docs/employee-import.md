@@ -15,7 +15,7 @@
 团队管理页创建命名密钥，完整原文仅创建时返回一次，请立即保存。有效期 90 天，数据库仅存 SHA-256。可在页面撤销。密钥只绑定创建时的租户，只允许调用导入端点，创建者失去 `team.manage` 权限或成员资格后也无法使用。同一密钥成功请求间隔至少 1 秒，过于频繁返回 429；网络重试可以安全重发，已存在的成员跳过。
 
 ```sh
-export APP_URL='http://app.lvh.me:3100'
+export APP_URL='http://app.lvh.me:6101'
 # API_KEY 从密钥管理系统注入，不要写入代码或日志。
 curl --fail-with-body -X POST "$APP_URL/api/team/import" \
   -H "Authorization: Bearer $API_KEY" \

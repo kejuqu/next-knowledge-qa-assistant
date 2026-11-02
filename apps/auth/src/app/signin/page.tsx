@@ -14,7 +14,7 @@ import {
 } from "@kqa/ui/components/card";
 import { BookOpenCheck } from "lucide-react";
 
-const WEB_APP_URL = process.env.NEXT_PUBLIC_WEB_APP_URL ?? "http://app.lvh.me:3100";
+const WEB_APP_URL = process.env.NEXT_PUBLIC_WEB_APP_URL ?? "http://app.lvh.me:6101";
 
 export default function SignInPage() {
   const [error, setError] = useState("");

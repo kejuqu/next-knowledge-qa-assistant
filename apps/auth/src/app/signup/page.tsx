@@ -15,7 +15,7 @@ import {
 } from "@kqa/ui/components/card";
 import { BookOpenCheck, CircleHelp } from "lucide-react";
 
-const WEB_APP_URL = process.env.NEXT_PUBLIC_WEB_APP_URL ?? "http://app.lvh.me:3100";
+const WEB_APP_URL = process.env.NEXT_PUBLIC_WEB_APP_URL ?? "http://app.lvh.me:6101";
 
 export default function SignUpPage() {
   const [error, setError] = useState("");

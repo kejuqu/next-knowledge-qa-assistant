@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      dotenv-cli:
+        specifier: ^11.1.0
+        version: 11.1.0
       turbo:
         specifier: ^2.5.0
         version: 2.11.10
@@ -147,7 +150,7 @@ importers:
     dependencies:
       '@langchain/community':
         specifier: ^0.3.45
-        version: 0.3.59(@aws-sdk/client-s3@3.1159.0)(@aws-sdk/credential-provider-node@3.972.90)(@browserbasehq/sdk@2.24.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.16)(@langchain/core@0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76)))(@opentelemetry/api@1.10.0)(@zilliz/milvus2-sdk-node@2.6.17)(axios@1.20.0)(cheerio@1.2.0)(ibm-cloud-sdk-core@5.9.1)(jsonwebtoken@9.0.3)(mammoth@1.13.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(pdf-parse@1.1.4)(playwright@1.64.1)(weaviate-client@3.15.1)(ws@5.2.7)
+        version: 0.3.59(@aws-sdk/client-s3@3.1159.0)(@aws-sdk/credential-provider-node@3.972.90)(@browserbasehq/sdk@2.24.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.16)(@langchain/core@0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76)))(@opentelemetry/api@1.10.0)(@zilliz/milvus2-sdk-node@2.6.17)(axios@1.20.0)(cheerio@1.2.0)(ibm-cloud-sdk-core@5.9.1)(jsonwebtoken@9.0.3)(mammoth@1.13.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(pdf-parse@1.1.4)(playwright@1.64.1)(weaviate-client@3.15.1)(ws@5.2.7)
       '@langchain/core':
         specifier: ^0.3.58
         version: 0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))
@@ -2760,6 +2763,10 @@ packages:
     resolution: {integrity: sha512-NT7w2JVU7DFroFdYkeq8cywxrgjPHWkdX1wjpRQXPX5Asews3tA+Ght6lddQO5Mkumffp3X7GEqku3epj2toIw==}
     engines: {node: '>= 10'}
 
+  cross-spawn@7.0.6:
+    resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
+    engines: {node: '>= 8'}
+
   css-select@5.2.2:
     resolution: {integrity: sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==}
 
@@ -2867,8 +2874,20 @@ packages:
     resolution: {integrity: sha512-qI4JLRKnSzqFqr7hAlS5xQDusBCjKSEG4t4+7aNrIQMHBcsC2TGEhuyABJdYkgSewL57PNLYEiibY2iPKhKpaA==}
     engines: {node: '>=20.19.0'}
 
+  dotenv-cli@11.1.0:
+    resolution: {integrity: sha512-YUBODAS0puvSc9bGdu07o1GSouVn63xDazqZqvT99Hta4nPqZ1jTdBcz12dDdxSC9jYbVlpWlnu0IJaMR8TIEQ==}
+    hasBin: true
+
+  dotenv-expand@12.0.3:
+    resolution: {integrity: sha512-uc47g4b+4k/M/SeaW1y4OApx+mtLWl92l5LMPP0GNXctZqELk+YGgOPIIC5elYmUH4OuoK3JLhuRUYegeySiFA==}
+    engines: {node: '>=12'}
+
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+    engines: {node: '>=12'}
+
+  dotenv@17.4.2:
+    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
   drizzle-kit@0.31.11:
@@ -3435,6 +3454,9 @@ packages:
 
   isarray@2.0.5:
     resolution: {integrity: sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw==}
+
+  isexe@2.0.0:
+    resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
   isomorphic-ws@4.0.1:
     resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
@@ -4134,6 +4156,10 @@ packages:
     resolution: {integrity: sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==}
     engines: {node: '>=0.10.0'}
 
+  path-key@3.1.1:
+    resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
+    engines: {node: '>=8'}
+
   pdf-parse@1.1.4:
     resolution: {integrity: sha512-XRIRcLgk6ZnUbsHsYXExMw+krrPE81hJ6FQPLdBNhhBefqIQKXu/WeTgNBGSwPrfU0v+UCEwn7AoAUOsVKHFvQ==}
     engines: {node: '>=6.8.1'}
@@ -4363,6 +4389,14 @@ packages:
     peerDependenciesMeta:
       '@types/node':
         optional: true
+
+  shebang-command@2.0.0:
+    resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
+    engines: {node: '>=8'}
+
+  shebang-regex@3.0.0:
+    resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
+    engines: {node: '>=8'}
 
   side-channel-list@1.0.1:
     resolution: {integrity: sha512-mjn/0bi/oUURjc5Xl7IaWi/OJJJumuoJFQJfDDyO46+hBWsfaVM65TBHq2eoZBhzl9EchxOijpkbRC8SVBQU0w==}
@@ -4810,6 +4844,11 @@ packages:
   which-typed-array@1.1.24:
     resolution: {integrity: sha512-wk4Mf4pR5mRP7eYuuTBCIQ9d0ud2Fv2jRLQpfgnRjbOxAFHmjKFValgTpitVKzJJS8ajnYQV2Du1SZ8j6b/EUQ==}
     engines: {node: '>= 0.4'}
+
+  which@2.0.2:
+    resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
+    engines: {node: '>= 8'}
+    hasBin: true
 
   why-is-node-running@3.2.1:
     resolution: {integrity: sha512-Tb2FUhB4vUsGQlfSquQLYkApkuPAFQXGFzxWKHHumVz2dK+X1RUm/HnID4+TfIGYJ1kTcwOaCk/buYCEJr6YjQ==}
@@ -5267,13 +5306,13 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@browserbasehq/stagehand@1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76)':
+  '@browserbasehq/stagehand@1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76)':
     dependencies:
       '@anthropic-ai/sdk': 0.27.3
       '@browserbasehq/sdk': 2.24.0
       '@playwright/test': 1.64.1
       deepmerge: 4.3.1
-      dotenv: 16.6.1
+      dotenv: 17.4.2
       openai: 5.23.2(ws@5.2.7)(zod@3.25.76)
       ws: 8.22.0
       zod: 3.25.76
@@ -5724,9 +5763,9 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
-  '@langchain/community@0.3.59(@aws-sdk/client-s3@3.1159.0)(@aws-sdk/credential-provider-node@3.972.90)(@browserbasehq/sdk@2.24.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.16)(@langchain/core@0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76)))(@opentelemetry/api@1.10.0)(@zilliz/milvus2-sdk-node@2.6.17)(axios@1.20.0)(cheerio@1.2.0)(ibm-cloud-sdk-core@5.9.1)(jsonwebtoken@9.0.3)(mammoth@1.13.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(pdf-parse@1.1.4)(playwright@1.64.1)(weaviate-client@3.15.1)(ws@5.2.7)':
+  '@langchain/community@0.3.59(@aws-sdk/client-s3@3.1159.0)(@aws-sdk/credential-provider-node@3.972.90)(@browserbasehq/sdk@2.24.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.16)(@langchain/core@0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76)))(@opentelemetry/api@1.10.0)(@zilliz/milvus2-sdk-node@2.6.17)(axios@1.20.0)(cheerio@1.2.0)(ibm-cloud-sdk-core@5.9.1)(jsonwebtoken@9.0.3)(mammoth@1.13.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(pdf-parse@1.1.4)(playwright@1.64.1)(weaviate-client@3.15.1)(ws@5.2.7)':
     dependencies:
-      '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76)
+      '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.64.1)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))(zod@3.25.76)
       '@ibm-cloud/watsonx-ai': 1.7.16
       '@langchain/core': 0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76))
       '@langchain/openai': 0.5.18(@langchain/core@0.3.80(@opentelemetry/api@1.10.0)(openai@5.23.2(ws@5.2.7)(zod@3.25.76)))(ws@5.2.7)
@@ -6951,6 +6990,12 @@ snapshots:
       crc-32: 1.2.2
       readable-stream: 3.6.2
 
+  cross-spawn@7.0.6:
+    dependencies:
+      path-key: 3.1.1
+      shebang-command: 2.0.0
+      which: 2.0.2
+
   css-select@5.2.2:
     dependencies:
       boolbase: 1.0.0
@@ -7059,7 +7104,20 @@ snapshots:
       domelementtype: 3.0.0
       domhandler: 6.0.1
 
+  dotenv-cli@11.1.0:
+    dependencies:
+      cross-spawn: 7.0.6
+      dotenv: 17.4.2
+      dotenv-expand: 12.0.3
+      minimist: 1.2.8
+
+  dotenv-expand@12.0.3:
+    dependencies:
+      dotenv: 16.6.1
+
   dotenv@16.6.1: {}
+
+  dotenv@17.4.2: {}
 
   drizzle-kit@0.31.11:
     dependencies:
@@ -7713,6 +7771,8 @@ snapshots:
   isarray@1.0.0: {}
 
   isarray@2.0.5: {}
+
+  isexe@2.0.0: {}
 
   isomorphic-ws@4.0.1(ws@5.2.7):
     dependencies:
@@ -8563,6 +8623,8 @@ snapshots:
 
   path-is-absolute@1.0.1: {}
 
+  path-key@3.1.1: {}
+
   pdf-parse@1.1.4:
     dependencies:
       node-ensure: 0.0.0
@@ -8912,6 +8974,12 @@ snapshots:
       '@img/sharp-win32-x64': 0.35.5
       '@types/node': 26.6.5
     optional: true
+
+  shebang-command@2.0.0:
+    dependencies:
+      shebang-regex: 3.0.0
+
+  shebang-regex@3.0.0: {}
 
   side-channel-list@1.0.1:
     dependencies:
@@ -9388,6 +9456,10 @@ snapshots:
       get-proto: 1.0.1
       gopd: 1.2.0
       has-tostringtag: 1.0.2
+
+  which@2.0.2:
+    dependencies:
+      isexe: 2.0.0
 
   why-is-node-running@3.2.1: {}
 

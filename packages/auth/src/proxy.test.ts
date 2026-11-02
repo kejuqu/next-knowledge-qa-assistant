@@ -9,7 +9,7 @@ let token: string;
 let expired: string;
 beforeAll(async () => {
   process.env.AUTH_SECRET = "proxy-test-secret";
-  process.env.AUTH_APP_URL = "http://auth.lvh.me:3001";
+  process.env.AUTH_APP_URL = "http://auth.lvh.me:6100";
   token = await signSession({ sub: "u1", email: "a@b.c", name: "T", tenantId: "t1", tenantName: "T", role: "member" });
   expired = await new SignJWT({ tenantId: "t1" }).setProtectedHeader({ alg: "HS256" })
     .setSubject("u1").setIssuer(SESSION_ISSUER).setAudience(SESSION_AUDIENCE)
@@ -17,14 +17,14 @@ beforeAll(async () => {
 });
 
 function request(path: string, cookie?: string) {
-  return new NextRequest(`http://app.lvh.me:3100${path}`, { headers: cookie ? { cookie } : {} });
+  return new NextRequest(`http://app.lvh.me:6101${path}`, { headers: cookie ? { cookie } : {} });
 }
 
 describe("JWT proxy", () => {
   it("redirects anonymous page requests to auth", async () => {
     const response = await proxy(request("/chat"));
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://auth.lvh.me:3001/signin");
+    expect(response.headers.get("location")).toBe("http://auth.lvh.me:6100/signin");
   });
   it.each([undefined, "kqa_session=forged"])("returns JSON 401 for unauthenticated API requests: %s", async (cookie) => {
     const response = await proxy(request("/api/documents/a/retry", cookie));
@@ -33,13 +33,13 @@ describe("JWT proxy", () => {
   });
   it("仅员工导入 POST 的 Bearer 请求交由路由鉴权", async () => {
     const bearer = { authorization: "Bearer invalid" };
-    const allowed = await proxy(new NextRequest("http://app.lvh.me:3100/api/team/import", { method: "POST", headers: bearer }));
+    const allowed = await proxy(new NextRequest("http://app.lvh.me:6101/api/team/import", { method: "POST", headers: bearer }));
     expect(allowed.headers.get("x-middleware-next")).toBe("1");
     for (const path of ["/api/team/api-keys", "/api/team", "/api/documents", "/api/team/import/template"]) {
-      expect((await proxy(new NextRequest(`http://app.lvh.me:3100${path}`, { method: "POST", headers: bearer }))).status).toBe(401);
+      expect((await proxy(new NextRequest(`http://app.lvh.me:6101${path}`, { method: "POST", headers: bearer }))).status).toBe(401);
     }
-    expect((await proxy(new NextRequest("http://app.lvh.me:3100/api/team/import", { headers: bearer }))).status).toBe(401);
-    expect((await proxy(new NextRequest("http://app.lvh.me:3100/api/team/import", { method: "POST" }))).status).toBe(401);
+    expect((await proxy(new NextRequest("http://app.lvh.me:6101/api/team/import", { headers: bearer }))).status).toBe(401);
+    expect((await proxy(new NextRequest("http://app.lvh.me:6101/api/team/import", { method: "POST" }))).status).toBe(401);
   });
   it("rejects expired JWTs", async () => {
     expect((await proxy(request("/api/conversations", `kqa_session=${expired}`))).status).toBe(401);

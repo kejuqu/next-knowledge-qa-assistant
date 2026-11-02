@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "dotenv -e ../../.env -- next dev -p 6100",
     "build": "next build",
-    "start": "next start -p 3001",
+    "start": "dotenv -e ../../.env -- next start -p 6100",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
