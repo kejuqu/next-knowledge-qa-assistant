@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/api" || request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  return new NextResponse(null, { status: 307, headers: { Location: "/signin" } });
+  return NextResponse.redirect(new URL("/signin", request.url));
 }
 
 export const config = {

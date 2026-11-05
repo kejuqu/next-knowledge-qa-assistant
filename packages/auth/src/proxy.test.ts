@@ -26,10 +26,10 @@ describe("JWT proxy", () => {
   it.each(["/api/signin/admin", "/api/signup-extra"])("does not expose similar API paths: %s", async (path) => {
     expect((await proxy(request(path))).status).toBe(401);
   });
-  it("redirects anonymous page requests to auth", async () => {
-    const response = await proxy(request("/chat"));
+  it.each(["/", "/chat", "/documents?tab=recent"])("redirects anonymous page requests to an absolute auth URL: %s", async (path) => {
+    const response = await proxy(request(path));
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("/signin");
+    expect(response.headers.get("location")).toBe("http://app.lvh.me:6101/signin");
   });
   it.each([undefined, "kqa_session=forged"])("returns JSON 401 for unauthenticated API requests: %s", async (cookie) => {
     const response = await proxy(request("/api/documents/a/retry", cookie));

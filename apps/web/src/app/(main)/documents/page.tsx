@@ -16,9 +16,25 @@ export default function DocumentsPage() {
   // SSE：服务端处理状态变更实时推送到 TanStack Query 缓存
   useDocumentEvents();
 
-  const { data: docs = [], isLoading } = useQuery<DocumentItem[]>({
+  const { data: docs = [], isLoading, error: loadError, refetch } = useQuery<DocumentItem[]>({
     queryKey: ["documents"],
-    queryFn: () => fetch("/api/documents").then((r) => r.json()),
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const timeout = AbortSignal.timeout(15_000);
+      try {
+        const response = await fetch("/api/documents", {
+          signal: AbortSignal.any([signal, timeout]),
+        });
+        if (response.status === 401) throw new Error("登录已失效，请刷新页面重新登录。");
+        if (!response.ok) throw new Error("知识库加载失败，请稍后重试。");
+        const data: unknown = await response.json();
+        if (!Array.isArray(data)) throw new Error("知识库数据格式异常，请稍后重试。");
+        return data;
+      } catch (error) {
+        if (timeout.aborted) throw new Error("知识库请求超时，请检查网络后重试。");
+        throw error;
+      }
+    },
   });
 
   return (
@@ -40,6 +56,11 @@ export default function DocumentsPage() {
 
         {isLoading ? (
           <DocumentListSkeleton />
+        ) : loadError ? (
+          <div role="alert" className="rounded-xl bg-card p-4 text-sm">
+            <p className="text-destructive">{loadError instanceof TypeError ? "无法连接知识库，请检查网络后重试。" : loadError.message}</p>
+            <button type="button" onClick={() => void refetch()} className="mt-3 text-primary underline underline-offset-4">重新加载</button>
+          </div>
         ) : docs.length === 0 && tasks.length === 0 ? (
           canUpload ? <EmptyState onSelect={upload} /> : (
             <p className="py-20 text-center text-sm text-muted-foreground">知识库暂无文档，请联系管理员上传。</p>
