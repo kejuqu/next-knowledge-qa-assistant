@@ -106,6 +106,8 @@ ${EDITOR:-vi} /opt/kqa/.env
 
 工作流自动同步 `docker-compose.prod.yml`，启动基础设施、执行已有数据库迁移，再更新应用并等待健康检查。数据保存在 Docker volumes 中。日常本地开发继续使用原 `docker-compose.yml`。
 
+镜像下载在独立的 `Pull production images` 步骤执行，最多等待 60 分钟；每次只拉取一个服务的镜像，拉取失败最多尝试 3 次。下载完成后，`Update containers` 有独立的 20 分钟执行迁移和更新。整个部署任务最多运行 120 分钟。若下载步骤仍超时，需要检查服务器到镜像仓库的网络连接；重试可复用已下载完成的镜像层。
+
 应用只监听服务器 `127.0.0.1:6101`。将域名 HTTPS 反向代理到此端口，例如 Nginx 的 HTTPS server 中：
 
 ```nginx
