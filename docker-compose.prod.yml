@@ -1,0 +1,139 @@
+# 服务器部署专用；仅通过宿主机 HTTPS 反向代理访问 web。
+name: kqa
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kqa-postgres
+    environment:
+      POSTGRES_USER: kqa
+      POSTGRES_PASSWORD: kqa_password
+      POSTGRES_DB: kqa
+    volumes:
+    - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U kqa -d kqa
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: kqa-redis
+    volumes:
+    - redisdata:/data
+    healthcheck:
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.16
+    container_name: kqa-etcd
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: '1000'
+      ETCD_QUOTA_BACKEND_BYTES: '4294967296'
+      ETCD_SNAPSHOT_COUNT: '50000'
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
+      --data-dir /etcd
+    volumes:
+    - etcddata:/etcd
+    healthcheck:
+      test:
+      - CMD
+      - etcdctl
+      - endpoint
+      - health
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+  minio:
+    image: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
+    container_name: kqa-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: minio server /minio_data --console-address ":9001"
+    volumes:
+    - miniodata:/minio_data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - mc alias set local http://localhost:9000 minioadmin minioadmin >/dev/null
+        2>&1 && mc ready local
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+  milvus:
+    image: milvusdb/milvus:v2.5.4
+    container_name: kqa-milvus
+    command:
+    - milvus
+    - run
+    - standalone
+    security_opt:
+    - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+    - milvusdata:/var/lib/milvus
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:9091/healthz
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+  web:
+    image: ${APP_IMAGE:-lekequ/next-knowledge-qa-assistant:latest}
+    restart: unless-stopped
+    env_file:
+    - .env
+    environment:
+      DATABASE_URL: postgres://kqa:kqa_password@postgres:5432/kqa
+      REDIS_URL: redis://redis:6379
+      MILVUS_ADDRESS: milvus:19530
+      MINIO_ENDPOINT: http://minio:9000
+    ports:
+    - 127.0.0.1:${APP_PORT:-6101}:6101
+    healthcheck:
+      test:
+      - CMD
+      - node
+      - -e
+      - fetch('http://127.0.0.1:6101/signin').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+volumes:
+  pgdata: null
+  redisdata: null
+  etcddata: null
+  miniodata: null
+  milvusdata: null

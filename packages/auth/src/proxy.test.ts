@@ -9,7 +9,6 @@ let token: string;
 let expired: string;
 beforeAll(async () => {
   process.env.AUTH_SECRET = "proxy-test-secret";
-  process.env.AUTH_APP_URL = "http://auth.lvh.me:6100";
   token = await signSession({ sub: "u1", email: "a@b.c", name: "T", tenantId: "t1", tenantName: "T", role: "member" });
   expired = await new SignJWT({ tenantId: "t1" }).setProtectedHeader({ alg: "HS256" })
     .setSubject("u1").setIssuer(SESSION_ISSUER).setAudience(SESSION_AUDIENCE)
@@ -21,10 +20,16 @@ function request(path: string, cookie?: string) {
 }
 
 describe("JWT proxy", () => {
+  it.each(["/signin", "/signup", "/api/signin", "/api/signup", "/api/signout"])("allows anonymous auth routes: %s", async (path) => {
+    expect((await proxy(request(path))).headers.get("x-middleware-next")).toBe("1");
+  });
+  it.each(["/api/signin/admin", "/api/signup-extra"])("does not expose similar API paths: %s", async (path) => {
+    expect((await proxy(request(path))).status).toBe(401);
+  });
   it("redirects anonymous page requests to auth", async () => {
     const response = await proxy(request("/chat"));
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://auth.lvh.me:6100/signin");
+    expect(response.headers.get("location")).toBe("/signin");
   });
   it.each([undefined, "kqa_session=forged"])("returns JSON 401 for unauthenticated API requests: %s", async (cookie) => {
     const response = await proxy(request("/api/documents/a/retry", cookie));

@@ -2,24 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => vi.unstubAllEnvs());
 
-describe("getCookieDomain", () => {
-  it("未设置 COOKIE_DOMAIN 时返回默认开发域 .lvh.me", async () => {
-    vi.stubEnv("COOKIE_DOMAIN", "");
-    const { getCookieDomain } = await import("./session");
-    expect(getCookieDomain()).toBe(".lvh.me");
-  });
-  it("白名单内的值原样返回", async () => {
-    vi.stubEnv("COOKIE_DOMAIN", "localhost");
-    const { getCookieDomain } = await import("./session");
-    expect(getCookieDomain()).toBe("localhost");
-  });
-  it("不在白名单内的值抛错(fail closed)", async () => {
-    vi.stubEnv("COOKIE_DOMAIN", "evil.com");
-    const { getCookieDomain } = await import("./session");
-    expect(() => getCookieDomain()).toThrow(/白名单/);
-  });
-});
-
 describe("JWT iss/aud", () => {
   beforeEach(() => vi.stubEnv("AUTH_SECRET", "test-secret"));
 

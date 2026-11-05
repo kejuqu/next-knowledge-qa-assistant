@@ -1,9 +1,4 @@
-/**
- * 跨子域名共享会话的约定：
- * - auth app 登录成功后，把 JWT 写进 httpOnly cookie，Domain=<父域名>（本地为 .lvh.me）
- * - 所有 *.父域名 的子应用（web/auth/未来的其它 app）都能读到同一个 cookie
- * - 各 app 用同一个 AUTH_SECRET 校验签名，无需互相调用
- */
+/** 同域会话：使用 HttpOnly、Path=/ 的 host-only Cookie，不设置 Domain。 */
 import { SignJWT, jwtVerify } from "jose";
 
 export const SESSION_COOKIE = "kqa_session";
@@ -25,18 +20,6 @@ function getSecret() {
   if (!secret) throw new Error("AUTH_SECRET is not set");
   // 将 secret 按 UTF-8 编码转换成字节数组（Uint8Array），jose 的 sign() 接受 Uint8Array
   return new TextEncoder().encode(secret);
-}
-
-// 允许作为会话 Cookie 父域的白名单。只认代码里的固定值,不接受任何请求输入或不受信的环境来源,
-// 防止 Host 头/配置注入把会话 Cookie 写到攻击者控制的域名。生产部署时把真实父域加进这个集合。
-const ALLOWED_COOKIE_DOMAINS = new Set([".lvh.me", "localhost"]);
-
-export function getCookieDomain(): string {
-  const domain = process.env.COOKIE_DOMAIN || ".lvh.me";
-  if (!ALLOWED_COOKIE_DOMAINS.has(domain)) {
-    throw new Error(`COOKIE_DOMAIN "${domain}" 不在白名单内,拒绝用作 Cookie 域名`);
-  }
-  return domain;
 }
 
 // 把用户信息打包成一个 JWT（JSON Web Token），并用服务端密钥签名

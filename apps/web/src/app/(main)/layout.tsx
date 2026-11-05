@@ -18,8 +18,6 @@ import { ChatNavigation } from "@/components/chat/chat-navigation";
 import { UserMenu } from "@/components/user-menu";
 import { NotificationMenu } from "@/components/notification-menu";
 
-const AUTH_APP_URL = process.env.AUTH_APP_URL ?? "http://auth.lvh.me:6100";
-
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const user = await getTenantUser();
   if (!user) redirect("/membership");
@@ -46,7 +44,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
             <ChatNavigation />
           </SidebarContent>
           <SidebarFooter className="pt-3.5">
-            <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} signOutUrl={`${AUTH_APP_URL}/api/signout`} />
+            <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} signOutUrl="/api/signout" />
           </SidebarFooter>
           <SidebarRail />
         </Sidebar>

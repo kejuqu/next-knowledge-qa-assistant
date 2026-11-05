@@ -6,7 +6,6 @@ import {
   signSession,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
-  getCookieDomain,
 } from "@kqa/auth";
 
 export async function POST(request: Request) {
@@ -64,8 +63,6 @@ export async function POST(request: Request) {
     sameSite: "lax",
     // 生产环境强制 HTTPS，防止 token 在明文 HTTP 上被窃听。本地开发用 http://localhost 时关掉，否则 Cookie 不会生效。
     secure: process.env.NODE_ENV === "production",
-    // 决定哪些子域能收到这个 Cookie
-    domain: getCookieDomain(),
     // 所有路径的请求都会带上。如果只想让 /api 或 /app 带，可以收窄，减少暴露面
     path: "/",
     // Cookie 在浏览器端的存活时间。到期浏览器自动删除。maxAge 必须和 JWT 的 exp 一致

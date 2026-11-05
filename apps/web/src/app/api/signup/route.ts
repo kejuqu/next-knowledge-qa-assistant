@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db, users, tenants, tenantMembers, notifications } from "@kqa/db";
 import type { NotificationContent } from "@kqa/db/notifications";
-import { hashPassword, signSession, SESSION_COOKIE, SESSION_MAX_AGE, getCookieDomain } from "@kqa/auth";
+import { hashPassword, signSession, SESSION_COOKIE, SESSION_MAX_AGE } from "@kqa/auth";
 import { normalizeTenantName, hasPermission, isPermissionList } from "@kqa/auth/permissions";
 
 class EmailExists extends Error {}
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({ ok: true, membershipStatus: membership.status });
     response.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production",
-      domain: getCookieDomain(), path: "/", maxAge: SESSION_MAX_AGE,
+      path: "/", maxAge: SESSION_MAX_AGE,
     });
     return response;
   } catch (error) {

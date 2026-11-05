@@ -4,11 +4,10 @@
  * monorepo 关键配置：Tailwind v4 自动扫描会以 node_modules 软链为由跳过 workspace 包，
  * 必须显式声明源路径（相对于本 CSS 文件）：
  * - "."            -> @kqa/ui 自己的组件
- * - apps/web|auth  -> 两个应用里的页面/组件类名
+ * - apps/web       -> 应用里的页面/组件类名
  */
 @source ".";
 @source "../../../apps/web/src";
-@source "../../../apps/auth/src";
 
 :root {
   color-scheme: light;

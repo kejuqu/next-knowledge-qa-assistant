@@ -7,13 +7,13 @@
 | 层        | 选型                                                                          |
 | --------- | ----------------------------------------------------------------------------- |
 | Monorepo  | pnpm workspace + Turborepo                                                    |
-| 前端      | Next.js 15 (App Router) + React 19                                            |
+| 前端      | Next.js 16 (App Router) + React 19                                            |
 | UI        | Tailwind CSS 4 + shadcn 风格组件 + lucide-react                               |
 | 状态/数据 | Zustand（客户端 UI 状态）+ TanStack Query（服务端数据）                       |
 | AI 编排   | LangChain.js（ChatOpenAI 兼容协议，可接 OpenAI / DeepSeek / Ollama 本地模型） |
 | 向量库    | Milvus standalone                                                             |
 | 关系库    | PostgreSQL 16 + Drizzle ORM                                                   |
-| 认证      | 独立 auth 子应用 + JWT + 父域名共享 Cookie                                    |
+| 认证      | 同域登录注册 + JWT + HttpOnly Cookie                                    |
 | 基础设施  | docker-compose                                                                |
 
 ## 目录结构
@@ -21,8 +21,7 @@
 ```
 knowledge-qa-assistant/
 ├── apps/
-│   ├── web/                  # 主应用  app.lvh.me:6101（问答/知识库/模型设置）
-│   └── auth/                 # 认证中心 auth.lvh.me:6100（注册/登录/退出）
+│   └── web/                  # localhost:6101（登录/注册/问答/知识库/模型设置）
 ├── packages/
 │   ├── ui/                   # @kqa/ui        shadcn 风格组件 + 主题 tokens
 │   ├── db/                   # @kqa/db        Drizzle schema + 连接客户端
@@ -39,22 +38,15 @@ knowledge-qa-assistant/
 - **app 内部引用**统一 `@/*` → `./src/*`（在各 app 的 tsconfig `paths` 中配置）
 - 内部包直接导出 **TS 源码**（`"exports": "./src/*.ts"`），由消费方的 Next.js `transpilePackages` 编译，省去包的构建步骤
 
-## 跨子域名认证原理
+## 同域认证
 
-```
-auth.lvh.me:6100 ──登录成功──> Set-Cookie: kqa_session=<JWT>; Domain=.lvh.me; HttpOnly
-                                        │
-app.lvh.me:6101 ──proxy.ts 统一校验 JWT──> 服务端独立验证身份与资源权限
-```
+登录 `/signin`、注册 `/signup`、认证接口 `/api/signin`、`/api/signup`、`/api/signout` 与主应用共用一个 Next.js 服务及域名。
 
-- cookie 写在**父域名** `.lvh.me` 上，所有子域名共享
-- `lvh.me` 是通配 DNS，永远解析到 127.0.0.1，无需改 hosts；生产换成 `.your-domain.com`
-- JWT 由 `jose` 用 HS256 签名，密钥 `AUTH_SECRET` 两个 app 共享，auth 与 web 零互调
-- Web 的 `proxy.ts` 统一验证会话：页面未登录跳转认证中心，API 未登录返回 JSON 401；框架静态资源及公开图标放行
-- 服务端组件、API 路由仍通过 `getSessionUser()` 独立验签，并检查租户、资源归属等业务权限；Proxy 不替代这些校验
-- JWT 带标准 claim：`iss=kqa-auth` / `aud=kqa`，验签时一并核对，防止其它系统用同密钥签发的 token 被混用
-- `COOKIE_DOMAIN` 有**代码级白名单**（`.lvh.me` / `localhost`），不在白名单内的值直接抛异常，防止配置注入把会话 cookie 写到攻击者域名
-- 校验时强制要求 `tenantId` 存在，老版本 token 自动失效、强制重新登录
+- 会话 Cookie 使用 HttpOnly、SameSite=Lax、Path=/，不设置 Domain，仅发送给当前域名；生产环境启用 Secure，需通过 HTTPS 访问。
+- 所有跳转、表单和请求使用站内路径，无需配置 `AUTH_APP_URL`、`WEB_APP_URL`、`NEXT_PUBLIC_*_APP_URL` 或 `COOKIE_DOMAIN`。
+- Proxy 放行认证页面和接口；其他页面未登录跳转 `/signin`，业务 API 未登录返回 JSON 401。
+- 服务端继续独立验签并校验租户、成员状态及资源权限，JWT 的 issuer/audience 校验保持不变。
+- 从旧子域名部署迁移时请先清除旧的 `kqa_session` 父域 Cookie，再重新登录，避免新旧同名会话冲突。
 
 ## 快速开始
 
@@ -71,16 +63,60 @@ pnpm db:generate && pnpm db:migrate
 # 4. 配置环境变量
 cp .env.example .env   # 修改 AUTH_SECRET 与 LLM/Embedding 的 key
 
-# 5. 同时启动两个 app
+# 5. 启动应用
 pnpm dev
 ```
 
 访问：
 
-- 主应用：http://app.lvh.me:6101 （如果未登录自动跳转认证中心）
-- 认证中心：http://auth.lvh.me:6100
+- 主应用：http://localhost:6101 （未登录跳转 `/signin`，注册入口 `/signup`）
 - MinIO 控制台：http://localhost:9001 （minioadmin / minioadmin）
 - Attu（Milvus GUI）：http://localhost:8000 → 看向量集合、逐行数据、手动试检索；`docker compose up -d` 自动拉起，详见 [docs/nextjs-monorepo-postgres-milvus-rag.md](docs/nextjs-monorepo-postgres-milvus-rag.md) 第 10 节
+
+## GitHub Actions 部署（my-site）
+
+工作流：`.github/workflows/deploy.yml`。推送或合并到 `my-site` 时运行测试、类型检查、Docker 构建、推送镜像及 SSH 部署；手动运行也仅允许选择 `my-site`。合并使用 push 事件触发，参见 [GitHub 触发规则](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)。
+
+仓库 Settings → Secrets and variables → Actions 配置：
+
+| Secret | 用途 |
+| --- | --- |
+| `DOCKERHUB_USERNAME` | Docker Hub 用户名 |
+| `DOCKERHUB_TOKEN` | 有推送权限的访问令牌 |
+| `SERVER_HOST` | 服务器地址 |
+| `SERVER_USER` | SSH 用户（需有 Docker 和 `/opt/kqa` 写权限） |
+| `SSH_PRIVATE_KEY` | SSH 私钥 |
+
+默认镜像为 `lekequ/next-knowledge-qa-assistant`；如需其他仓库，同时修改工作流 `IMAGE` 和生产 Compose 默认镜像。镜像仓库需设为 public，服务器匿名拉取，不执行 Docker Hub 登录。
+
+首次部署前，在服务器安装 Docker Engine 和 Compose v2（支持 `--wait`），创建 `/opt/kqa/.env`，内容参考 `.env.example`。设置随机 `AUTH_SECRET`、模型配置及 MinIO 访问凭据；Compose 会将数据库、Redis、Milvus 和 MinIO 地址切换为容器服务名。`.env` 不进入镜像，也不由工作流上传。生产配置使用当前项目的数据库及 MinIO 默认凭据，如调整须同步修改生产 Compose 与 `.env`。
+
+工作流自动同步 `docker-compose.prod.yml`，启动基础设施、执行已有数据库迁移，再更新应用并等待健康检查。数据保存在 Docker volumes 中。日常本地开发继续使用原 `docker-compose.yml`。
+
+应用只监听服务器 `127.0.0.1:6101`。将域名 HTTPS 反向代理到此端口，例如 Nginx 的 HTTPS server 中：
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:6101;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_read_timeout 300s;
+    client_max_body_size 25m;
+}
+```
+
+登录、注册和业务访问使用该同一域名。生产会话 Cookie 启用了 Secure，需配置 HTTPS。
+
+每次发布同时推送 `latest` 和提交 SHA 前 7 位标签。手动指定历史镜像可回滚应用（数据库迁移不会自动回滚）：
+
+```bash
+cd /opt/kqa
+APP_IMAGE=lekequ/next-knowledge-qa-assistant:<历史SHA> docker compose -f docker-compose.prod.yml up -d --wait
+```
+
 
 ## 接入本地模型（如 Ollama）
 

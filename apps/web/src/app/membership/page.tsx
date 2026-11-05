@@ -6,15 +6,13 @@ import { Button } from "@kqa/ui/components/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@kqa/ui/components/card";
 import { Clock, RefreshCw } from "lucide-react";
 
-const AUTH_APP_URL = process.env.NEXT_PUBLIC_AUTH_APP_URL ?? "http://auth.lvh.me:6100";
-
 export default function MembershipPage() {
   const { data, error, refetch, isFetching } = useQuery<{ status: string; tenantName: string }>({
     queryKey: ["membership"],
     queryFn: async () => {
       const response = await fetch("/api/membership");
       if (response.status === 401) {
-        window.location.assign(`${AUTH_APP_URL}/signin`);
+        window.location.assign("/signin");
         throw new Error("请重新登录");
       }
       if (!response.ok) throw new Error("无法读取加入申请，请联系团队管理员。");
@@ -41,7 +39,7 @@ export default function MembershipPage() {
         </CardContent>
         <CardFooter className="flex flex-wrap gap-3">
           <Button variant="outline" disabled={isFetching} onClick={() => void refetch()}><RefreshCw />检查审批状态</Button>
-          <form action={`${AUTH_APP_URL}/api/signout`} method="post"><Button variant="ghost" type="submit">退出登录</Button></form>
+          <form action="/api/signout" method="post"><Button variant="ghost" type="submit">退出登录</Button></form>
         </CardFooter>
       </Card>
     </div>

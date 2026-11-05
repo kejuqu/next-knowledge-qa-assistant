@@ -10,7 +10,8 @@
     "db:generate": "pnpm --filter @kqa/db run db:generate",
     "db:migrate": "pnpm --filter @kqa/db run db:migrate",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "test": "pnpm --filter @kqa/auth test && node --test apps/web/src/lib/document-file.test.mjs"
   },
   "devDependencies": {
     "dotenv-cli": "^11.1.0",

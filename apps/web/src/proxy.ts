@@ -3,6 +3,10 @@ import { SESSION_COOKIE, verifySession } from "@kqa/auth/session";
 
 /** 统一入口校验；路由/数据访问层仍独立验证身份和资源权限。 */
 export async function proxy(request: NextRequest) {
+  if (["/signin", "/signup", "/api/signin", "/api/signup", "/api/signout"].includes(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   // 仅此导入端点允许由路由独立校验 Bearer Key；密钥不能访问其他 API。
   if (request.method === "POST" && request.nextUrl.pathname === "/api/team/import"
     && request.headers.has("authorization")) return NextResponse.next();
@@ -24,8 +28,7 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/api" || request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const authUrl = process.env.AUTH_APP_URL ?? "http://auth.lvh.me:6100";
-  return NextResponse.redirect(new URL("/signin", authUrl));
+  return new NextResponse(null, { status: 307, headers: { Location: "/signin" } });
 }
 
 export const config = {
