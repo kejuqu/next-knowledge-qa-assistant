@@ -89,7 +89,20 @@ pnpm dev
 
 默认镜像为 `lekequ/next-knowledge-qa-assistant`；如需其他仓库，同时修改工作流 `IMAGE` 和生产 Compose 默认镜像。镜像仓库需设为 public，服务器匿名拉取，不执行 Docker Hub 登录。
 
-首次部署前，在服务器安装 Docker Engine 和 Compose v2（支持 `--wait`），创建 `/opt/kqa/.env`，内容参考 `.env.example`。设置随机 `AUTH_SECRET`、模型配置及 MinIO 访问凭据；Compose 会将数据库、Redis、Milvus 和 MinIO 地址切换为容器服务名。`.env` 不进入镜像，也不由工作流上传。生产配置使用当前项目的数据库及 MinIO 默认凭据，如调整须同步修改生产 Compose 与 `.env`。
+首次部署前，在服务器安装 Docker Engine 和 Compose v2（支持 `--wait`）。以 `SERVER_USER` 对应的 SSH 用户登录服务器，初始化目录和环境文件：
+
+```bash
+sudo install -d -m 0750 -o "$(id -u)" -g "$(id -g)" /opt/kqa
+# 将 .env.example 的内容填入此文件，并修改生产环境配置
+umask 077
+touch /opt/kqa/.env
+chmod 600 /opt/kqa/.env
+${EDITOR:-vi} /opt/kqa/.env
+```
+
+工作流会在上传前检查目录权限；目录不存在或不可写时，使用 root 或免密 sudo 创建目录并将目录所有者设为 SSH 用户（不递归修改已有文件）。若没有相应权限，会输出管理员需要执行的命令。`.env` 必须已存在、非空且可读，否则提前终止部署。
+
+设置随机 `AUTH_SECRET`、模型配置及 MinIO 访问凭据；Compose 会将数据库、Redis、Milvus 和 MinIO 地址切换为容器服务名。`.env` 不进入镜像，也不由工作流上传。生产配置使用当前项目的数据库及 MinIO 默认凭据，如调整须同步修改生产 Compose 与 `.env`。
 
 工作流自动同步 `docker-compose.prod.yml`，启动基础设施、执行已有数据库迁移，再更新应用并等待健康检查。数据保存在 Docker volumes 中。日常本地开发继续使用原 `docker-compose.yml`。
 

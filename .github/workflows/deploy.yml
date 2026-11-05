@@ -55,6 +55,34 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Prepare deployment directory
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -eu
+            deploy_dir=/opt/kqa
+            if [ ! -d "$deploy_dir" ] || [ ! -w "$deploy_dir" ] || [ ! -x "$deploy_dir" ]; then
+              if [ "$(id -u)" -eq 0 ]; then
+                install -d -m 0750 "$deploy_dir"
+              elif sudo -n true 2>/dev/null; then
+                sudo -n install -d -m 0750 -o "$(id -u)" -g "$(id -g)" "$deploy_dir"
+              else
+                echo "Cannot write to $deploy_dir. Ask a server administrator to run:"
+                echo "sudo install -d -m 0750 -o $(id -un) -g $(id -gn) $deploy_dir"
+                exit 1
+              fi
+            fi
+            if [ ! -w "$deploy_dir" ] || [ ! -x "$deploy_dir" ]; then
+              echo "Deployment directory is still inaccessible: $deploy_dir"
+              exit 1
+            fi
+            if [ ! -s "$deploy_dir/.env" ] || [ ! -r "$deploy_dir/.env" ]; then
+              echo "Create a readable, non-empty $deploy_dir/.env using .env.example before deploying."
+              exit 1
+            fi
       - name: Upload production compose
         uses: appleboy/scp-action@v0.1.7
         with:
