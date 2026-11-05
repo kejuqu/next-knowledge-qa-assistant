@@ -35,7 +35,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - name: Get image tag
@@ -56,6 +56,10 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Package production images
+        env:
+          APP_IMAGE: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+        run: bash .github/scripts/package-production-images.sh
       - name: Prepare deployment directory
         uses: appleboy/ssh-action@v1
         with:
@@ -64,6 +68,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -eu
+            if [ "$(uname -m)" != x86_64 ]; then
+              echo "This deployment bundle targets linux/amd64; the server must use x86_64."
+              exit 1
+            fi
             deploy_dir=/opt/kqa
             if [ ! -d "$deploy_dir" ] || [ ! -w "$deploy_dir" ] || [ ! -x "$deploy_dir" ]; then
               if [ "$(id -u)" -eq 0 ]; then
@@ -84,15 +92,17 @@ jobs:
               echo "Create a readable, non-empty $deploy_dir/.env using .env.example before deploying."
               exit 1
             fi
-      - name: Upload production compose
+      - name: Upload production bundle
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml
+          source: docker-compose.prod.yml,docker-compose.images.json,production-images.tar.gz,production-images.sha256
           target: /opt/kqa
-      - name: Pull production images
+          command_timeout: 60m
+          overwrite: true
+      - name: Import production images
         uses: appleboy/ssh-action@v1
         env:
           APP_IMAGE: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
@@ -101,25 +111,20 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: APP_IMAGE
-          command_timeout: 60m
+          command_timeout: 20m
           script: |
             set -eu
             cd /opt/kqa
             test -s .env
             export APP_IMAGE
-            # Limit simultaneous image downloads on bandwidth-constrained servers.
-            export COMPOSE_PARALLEL_LIMIT=1
-            docker compose -f docker-compose.prod.yml config --quiet
-            attempt=1
-            until docker compose --progress plain -f docker-compose.prod.yml pull; do
-              if [ "$attempt" -ge 3 ]; then
-                echo "Image download failed after $attempt attempts; containers have not been updated."
-                exit 1
-              fi
-              echo "Image download failed (attempt $attempt/3); retrying in 15 seconds."
-              attempt=$((attempt + 1))
-              sleep 15
-            done
+            sha256sum -c production-images.sha256
+            docker image load --input production-images.tar.gz
+            docker compose -f docker-compose.prod.yml -f docker-compose.images.json config --quiet
+            docker compose -f docker-compose.prod.yml -f docker-compose.images.json config --images > /tmp/kqa-required-images.txt
+            while IFS= read -r image; do
+              docker image inspect "$image" > /dev/null
+            done < /tmp/kqa-required-images.txt
+            rm production-images.tar.gz production-images.sha256
       - name: Update containers
         uses: appleboy/ssh-action@v1
         env:
@@ -135,8 +140,8 @@ jobs:
             cd /opt/kqa
             test -s .env
             export APP_IMAGE
-            docker compose -f docker-compose.prod.yml config --quiet
-            docker compose -f docker-compose.prod.yml up -d --wait postgres redis milvus
-            docker compose -f docker-compose.prod.yml run --rm --no-deps web pnpm db:migrate
-            docker compose -f docker-compose.prod.yml up -d --wait
+            docker compose -f docker-compose.prod.yml -f docker-compose.images.json config --quiet
+            docker compose -f docker-compose.prod.yml -f docker-compose.images.json up -d --pull never --wait postgres redis milvus
+            docker compose -f docker-compose.prod.yml -f docker-compose.images.json run --rm --no-deps --pull never web pnpm db:migrate
+            docker compose -f docker-compose.prod.yml -f docker-compose.images.json up -d --pull never --wait
             docker image prune -f

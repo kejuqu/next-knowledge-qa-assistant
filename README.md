@@ -87,7 +87,7 @@ pnpm dev
 | `SERVER_USER` | SSH 用户（需有 Docker 和 `/opt/kqa` 写权限） |
 | `SSH_PRIVATE_KEY` | SSH 私钥 |
 
-默认镜像为 `lekequ/next-knowledge-qa-assistant`；如需其他仓库，同时修改工作流 `IMAGE` 和生产 Compose 默认镜像。镜像仓库需设为 public，服务器匿名拉取，不执行 Docker Hub 登录。
+默认镜像为 `lekequ/next-knowledge-qa-assistant`；如需其他仓库，同时修改工作流 `IMAGE` 和生产 Compose 默认镜像。GitHub runner 登录镜像仓库后下载生产镜像，通过 SSH 上传镜像包；服务器不需要登录或连接镜像仓库。当前镜像包针对 Linux x86_64 服务器。
 
 首次部署前，在服务器安装 Docker Engine 和 Compose v2（支持 `--wait`）。以 `SERVER_USER` 对应的 SSH 用户登录服务器，初始化目录和环境文件：
 
@@ -106,7 +106,9 @@ ${EDITOR:-vi} /opt/kqa/.env
 
 工作流自动同步 `docker-compose.prod.yml`，启动基础设施、执行已有数据库迁移，再更新应用并等待健康检查。数据保存在 Docker volumes 中。日常本地开发继续使用原 `docker-compose.yml`。
 
-镜像下载在独立的 `Pull production images` 步骤执行，最多等待 60 分钟；每次只拉取一个服务的镜像，拉取失败最多尝试 3 次。下载完成后，`Update containers` 有独立的 20 分钟执行迁移和更新。整个部署任务最多运行 120 分钟。若下载步骤仍超时，需要检查服务器到镜像仓库的网络连接；重试可复用已下载完成的镜像层。
+`Package production images` 在 GitHub runner 上下载全部生产镜像，单次下载最多 10 分钟，失败最多尝试 3 次；随后导出压缩镜像包。`Upload production bundle` 通过 SSH 上传，最多等待 60 分钟。服务器在 `Import production images` 校验 SHA-256、导入镜像并检查完整性，成功后删除压缩包；`Update containers` 使用 `--pull never` 执行迁移和更新，不再从服务器直接下载镜像。导入和更新各有 20 分钟时限，整个部署任务最多运行 150 分钟。服务器需要预留镜像包、上传临时文件及导入镜像所需的磁盘空间。
+
+工作流自动生成并上传 `docker-compose.images.json`，为按 digest 固定的镜像添加可随镜像包导入的本地标签（打包前仍按原 digest 下载并校验）。服务器手动执行 Compose 命令时也应带上此覆盖文件。
 
 应用只监听服务器 `127.0.0.1:6101`。将域名 HTTPS 反向代理到此端口，例如 Nginx 的 HTTPS server 中：
 
@@ -129,8 +131,10 @@ location / {
 
 ```bash
 cd /opt/kqa
-APP_IMAGE=lekequ/next-knowledge-qa-assistant:<历史SHA> docker compose -f docker-compose.prod.yml up -d --wait
+APP_IMAGE=lekequ/next-knowledge-qa-assistant:<历史SHA> docker compose -f docker-compose.prod.yml -f docker-compose.images.json up -d --pull never --wait
 ```
+
+离线回滚要求服务器已保留该历史应用镜像；否则需先通过镜像包导入。覆盖文件保留当前基础服务版本，仅通过 `APP_IMAGE` 回滚应用。
 
 
 ## 接入本地模型（如 Ollama）

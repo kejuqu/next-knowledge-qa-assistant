@@ -7,4 +7,9 @@ dist
 .env.*
 *.tsbuildinfo
 .DS_Store
+production-compose.json
+production-image-list.tsv
+production-images.tar.gz
+production-images.sha256
+docker-compose.images.json
 drizzle/meta
