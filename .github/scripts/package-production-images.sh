@@ -4,6 +4,15 @@ set -euo pipefail
 : "${APP_IMAGE:?APP_IMAGE must identify the application release}"
 : "${GITHUB_SHA:?GITHUB_SHA must identify the bundle}"
 
+if command -v timeout >/dev/null 2>&1; then
+  timeout_command=timeout
+elif command -v gtimeout >/dev/null 2>&1; then
+  timeout_command=gtimeout
+else
+  echo "Install GNU timeout first (macOS: brew install coreutils)." >&2
+  exit 1
+fi
+
 # Resolve against an empty project directory so neither the local nor server
 # .env is read. This also works with older Compose v2 releases.
 bundle_config_dir=$(mktemp -d)
@@ -33,9 +42,14 @@ PY
 
 images=()
 while IFS=$'\t' read -r source target; do
+  if [ "${USE_LOCAL_APP_IMAGE:-0}" = 1 ] && [ "$source" = "$APP_IMAGE" ]; then
+    docker image inspect "$source" > /dev/null
+    images+=("$target")
+    continue
+  fi
   # Bound each attempt so a stalled download actually reaches the retry loop.
   for attempt in 1 2 3; do
-    if timeout --kill-after=30s 10m docker pull "$source"; then
+    if "$timeout_command" --kill-after=30s 10m docker pull "$source"; then
       break
     fi
     if [ "$attempt" -eq 3 ]; then
@@ -51,5 +65,9 @@ while IFS=$'\t' read -r source target; do
 done < production-image-list.tsv
 
 docker image save "${images[@]}" | gzip -1 > production-images.tar.gz
-sha256sum production-images.tar.gz docker-compose.prod.yml docker-compose.images.json > production-images.sha256
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256sum production-images.tar.gz docker-compose.prod.yml docker-compose.images.json > production-images.sha256
+else
+  shasum -a 256 production-images.tar.gz docker-compose.prod.yml docker-compose.images.json > production-images.sha256
+fi
 rm production-compose.json production-image-list.tsv
